@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum AllowedStatus {
+  YES
+  NO
+  DEPENDS
+}
+
+enum ContextType {
+  STAGE
+  PROVINCE
+  PROGRAM
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+/// Curated high-impact questions for international students
+model Question {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  answer   Answer?
+  contexts QuestionContext[]
+
+  @@map("questions")
+}
+
+/// Verified answers with deterministic status
+model Answer {
+  id           String        @id @default(uuid())
+  questionId   String        @unique
+  allowed      AllowedStatus
+  conditions   String?       @db.Text
+  consequences String?       @db.Text
+  verifiedAt   DateTime
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  sources  Source[]
+
+  @@map("answers")
+}
+
+/// Official government sources for citations
+model Source {
+  id         String   @id @default(uuid())
+  answerId   String
+  name       String
+  url        String
+  authority  String   // e.g., "IRCC", "CRA", "Provincial"
+  accessedAt DateTime
+  createdAt  DateTime @default(now())
+
+  // Relations
+  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@map("sources")
+}
+
+/// Context values for filtering (Stage, Province, Program)
+model Context {
+  id    String      @id @default(uuid())
+  type  ContextType
+  value String
+  label String
+
+  // Relations
+  questions QuestionContext[]
+
+  @@unique([type, value])
+  @@map("contexts")
+}
+
+/// Junction table for Question-Context many-to-many
+model QuestionContext {
+  id         String @id @default(uuid())
+  questionId String
+  contextId  String
+
+  // Relations
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  context  Context  @relation(fields: [contextId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, contextId])
+  @@map("question_contexts")
+}
