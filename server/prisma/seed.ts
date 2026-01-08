@@ -5,8 +5,11 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('🌱 Seeding database...');
 
-    // Clear existing context data
+    // Clear existing data (order matters due to foreign keys)
+    await prisma.source.deleteMany();
+    await prisma.answer.deleteMany();
     await prisma.questionContext.deleteMany();
+    await prisma.question.deleteMany();
     await prisma.context.deleteMany();
 
     // Seed Stage contexts
