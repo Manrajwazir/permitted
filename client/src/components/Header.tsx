@@ -14,7 +14,7 @@ export default function Header() {
                 {!isHome && (
                     <nav className="header-nav">
                         <Link to="/questions" className="header-link">
-                            Browse Questions
+                            All Questions
                         </Link>
                     </nav>
                 )}

@@ -1,5 +1,5 @@
 .header {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
   color: white;
   padding: 0.75rem 1rem;
   position: sticky;
@@ -21,6 +21,7 @@
   font-weight: 700;
   color: white;
   text-decoration: none;
+  letter-spacing: -0.02em;
 }
 
 .header-nav {
@@ -29,15 +30,17 @@
 }
 
 .header-link {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
   font-size: 0.875rem;
+  font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: var(--radius);
-  transition: background 0.2s;
+  transition: all var(--transition-base);
 }
 
 .header-link:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: white;
   text-decoration: none;
 }
