@@ -38,26 +38,45 @@ router.get('/', async (
             throw ApiError.badRequest(`Invalid program: ${program}`);
         }
 
-        // Build filter conditions
-        const contextFilters: string[] = [];
-        if (stage && typeof stage === 'string') contextFilters.push(stage);
-        if (province && typeof province === 'string') contextFilters.push(province);
-        if (program && typeof program === 'string') contextFilters.push(program);
+        // Build AND filter conditions - question must match ALL selected filters
+        const contextAndConditions = [];
 
-        // Query questions with optional filtering
+        if (stage && typeof stage === 'string') {
+            contextAndConditions.push({
+                contexts: {
+                    some: {
+                        context: { value: stage },
+                    },
+                },
+            });
+        }
+
+        if (province && typeof province === 'string') {
+            contextAndConditions.push({
+                contexts: {
+                    some: {
+                        context: { value: province },
+                    },
+                },
+            });
+        }
+
+        if (program && typeof program === 'string') {
+            contextAndConditions.push({
+                contexts: {
+                    some: {
+                        context: { value: program },
+                    },
+                },
+            });
+        }
+
+        // Query questions with AND filtering
         const questions = await prisma.question.findMany({
             where: {
                 ...(category && typeof category === 'string' ? { category } : {}),
-                ...(contextFilters.length > 0
-                    ? {
-                        contexts: {
-                            some: {
-                                context: {
-                                    value: { in: contextFilters },
-                                },
-                            },
-                        },
-                    }
+                ...(contextAndConditions.length > 0
+                    ? { AND: contextAndConditions }
                     : {}),
             },
             include: {

@@ -56,14 +56,27 @@ async function main() {
     console.log(`✅ Seeded ${allContexts.length} context records`);
 
     // ============================================
-    // SAMPLE QUESTIONS
+    // SAMPLE QUESTIONS WITH CONTEXT LINKS
     // ============================================
+
+    // Get all context records to link to questions
+    const contextRecords = await prisma.context.findMany();
+    const getContextId = (value: string) =>
+        contextRecords.find(c => c.value === value)?.id;
+
+    // All provinces (federal rules apply everywhere)
+    const ALL_PROVINCES = ['ON', 'BC', 'AB', 'QC', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE', 'NT', 'YT', 'NU'];
+    // Standard programs (not language programs for work-related questions)
+    const STANDARD_PROGRAMS = ['COLLEGE_DIPLOMA', 'UNDERGRADUATE', 'MASTERS', 'PHD'];
+    const ALL_PROGRAMS = ['COLLEGE_DIPLOMA', 'UNDERGRADUATE', 'MASTERS', 'PHD', 'LANGUAGE_PROGRAM'];
 
     const questions = [
         {
             slug: 'can-i-work-off-campus',
             title: 'Can I work off-campus while studying?',
             category: 'Work Rules',
+            // Applies to: All students currently studying, all provinces, standard programs
+            contextValues: ['STUDYING', ...ALL_PROVINCES, ...STANDARD_PROGRAMS],
             answer: {
                 allowed: 'DEPENDS' as const,
                 conditions: 'You can work off-campus up to 20 hours per week during regular academic sessions if you have a valid study permit that allows off-campus work, you are enrolled full-time at a designated learning institution (DLI), and you are studying in a program that is at least 6 months long and leads to a degree, diploma, or certificate.',
@@ -81,6 +94,8 @@ async function main() {
             slug: 'can-i-travel-outside-canada',
             title: 'Can I travel outside Canada while studying?',
             category: 'Travel',
+            // Applies to: All students, all provinces, all programs
+            contextValues: ['STUDYING', 'GRADUATING', ...ALL_PROVINCES, ...ALL_PROGRAMS],
             answer: {
                 allowed: 'YES' as const,
                 conditions: 'You can travel outside Canada if your study permit is still valid, you have a valid travel document (passport), and you have a valid visa or eTA to re-enter Canada. Make sure your study permit will not expire while you are abroad.',
@@ -98,6 +113,8 @@ async function main() {
             slug: 'can-i-change-schools',
             title: 'Can I change schools or programs?',
             category: 'Study Status',
+            // Applies to: Students currently studying, all provinces, all programs
+            contextValues: ['STUDYING', ...ALL_PROVINCES, ...ALL_PROGRAMS],
             answer: {
                 allowed: 'DEPENDS' as const,
                 conditions: 'You can change DLIs or programs if you remain enrolled at a Designated Learning Institution and update your information in the IRCC portal within 10 days of the change. If changing to a significantly different program type, you may need to apply for a new study permit.',
@@ -115,6 +132,8 @@ async function main() {
             slug: 'do-i-need-sin-to-work',
             title: 'Do I need a SIN to work in Canada?',
             category: 'Work Rules',
+            // Applies to: All students who want to work, all provinces, standard programs
+            contextValues: ['STUDYING', 'GRADUATING', ...ALL_PROVINCES, ...STANDARD_PROGRAMS],
             answer: {
                 allowed: 'YES' as const,
                 conditions: 'You must have a Social Insurance Number (SIN) before you can start working in Canada. You can apply for a SIN at a Service Canada office with your study permit that authorizes work.',
@@ -132,6 +151,8 @@ async function main() {
             slug: 'can-i-apply-for-pgwp',
             title: 'Can I apply for a Post-Graduation Work Permit (PGWP)?',
             category: 'Graduation',
+            // Applies to: Graduating students, all provinces, standard programs (not language programs)
+            contextValues: ['GRADUATING', ...ALL_PROVINCES, ...STANDARD_PROGRAMS],
             answer: {
                 allowed: 'DEPENDS' as const,
                 conditions: 'You may be eligible for a PGWP if you graduated from an eligible DLI, completed a program of at least 8 months, maintained full-time status during your studies, and apply within 180 days of receiving written confirmation of completing your program.',
@@ -148,7 +169,8 @@ async function main() {
     ];
 
     for (const q of questions) {
-        await prisma.question.create({
+        // Create the question
+        const createdQuestion = await prisma.question.create({
             data: {
                 slug: q.slug,
                 title: q.title,
@@ -166,9 +188,22 @@ async function main() {
                 },
             },
         });
+
+        // Link question to contexts
+        for (const contextValue of q.contextValues) {
+            const contextId = getContextId(contextValue);
+            if (contextId) {
+                await prisma.questionContext.create({
+                    data: {
+                        questionId: createdQuestion.id,
+                        contextId: contextId,
+                    },
+                });
+            }
+        }
     }
 
-    console.log(`✅ Created ${questions.length} sample questions`);
+    console.log(`✅ Created ${questions.length} sample questions with context links`);
 
     console.log('🎉 Seeding complete!');
 }
@@ -181,3 +216,4 @@ main()
     .finally(async () => {
         await prisma.$disconnect();
     });
+
