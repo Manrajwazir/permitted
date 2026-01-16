@@ -6,6 +6,57 @@ import Disclaimer from '../components/Disclaimer';
 import { fetchQuestion, QuestionDetail } from '../services/api';
 import './AnswerDisplay.css';
 
+// Category icons
+const categoryIcons: Record<string, string> = {
+    'Work Rules': '💼',
+    'Travel': '✈️',
+    'Study Status': '📚',
+    'Tax': '💰',
+    'Healthcare': '🏥',
+    'Graduation': '🎓',
+    'Financial': '💵',
+    'Immigration': '🛂',
+    'Housing': '🏠',
+    'Provincial Services': '🏛️',
+};
+
+// Collapsible section component
+function CollapsibleSection({
+    title,
+    icon,
+    children,
+    defaultOpen = true,
+    variant = 'default'
+}: {
+    title: string;
+    icon: string;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+    variant?: 'default' | 'warning';
+}) {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <section className={`collapsible-section ${variant}`}>
+            <button
+                className="collapsible-header"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span className="collapsible-icon">{icon}</span>
+                <h2>{title}</h2>
+                <span className={`collapsible-arrow ${isOpen ? 'open' : ''}`}>
+                    ›
+                </span>
+            </button>
+            {isOpen && (
+                <div className="collapsible-content">
+                    {children}
+                </div>
+            )}
+        </section>
+    );
+}
+
 export default function AnswerDisplay() {
     const { slug } = useParams<{ slug: string }>();
     const [question, setQuestion] = useState<QuestionDetail | null>(null);
@@ -39,9 +90,10 @@ export default function AnswerDisplay() {
             <div className="answer-page">
                 <div className="answer-container">
                     <div className="error-state">
+                        <div className="error-icon">🔍</div>
                         <h2>Question Not Found</h2>
                         <p>The question you're looking for doesn't exist.</p>
-                        <Link to="/questions" className="back-link">
+                        <Link to="/questions" className="back-button">
                             ← Back to Questions
                         </Link>
                     </div>
@@ -56,53 +108,71 @@ export default function AnswerDisplay() {
         day: 'numeric',
     });
 
+    const categoryIcon = categoryIcons[question.category] || '📋';
+
     return (
         <div className="answer-page">
+            {/* Header */}
+            <div className="answer-page-header">
+                <div className="answer-container">
+                    <Link to="/questions" className="back-link">
+                        ← Back to Questions
+                    </Link>
+
+                    <div className="answer-title-section">
+                        <span className="answer-category-badge">
+                            <span className="category-icon">{categoryIcon}</span>
+                            {question.category}
+                        </span>
+                        <h1 className="answer-title">{question.title}</h1>
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
             <div className="answer-container">
-                <Link to="/questions" className="back-link">
-                    ← Back to Questions
-                </Link>
-
-                <header className="answer-header">
-                    <span className="answer-category">{question.category}</span>
-                    <h1 className="answer-title">{question.title}</h1>
-                    <div className="answer-meta">
-                        <StatusBadge status={question.answer.allowed} />
-                        <span className="verified-date">Last verified: {verifiedDate}</span>
+                {/* Status Card */}
+                <div className={`status-card status-card--${question.answer.allowed.toLowerCase()}`}>
+                    <div className="status-card-content">
+                        <StatusBadge status={question.answer.allowed} size="large" />
+                        <div className="status-text">
+                            {question.answer.allowed === 'YES' && 'Yes, this is allowed'}
+                            {question.answer.allowed === 'NO' && 'No, this is not allowed'}
+                            {question.answer.allowed === 'DEPENDS' && 'It depends on your situation'}
+                        </div>
                     </div>
-                </header>
-
-                <section className="answer-section">
-                    <h2>Allowed?</h2>
-                    <div className={`answer-status answer-status--${question.answer.allowed.toLowerCase()}`}>
-                        {question.answer.allowed === 'YES' && 'Yes, this is allowed'}
-                        {question.answer.allowed === 'NO' && 'No, this is not allowed'}
-                        {question.answer.allowed === 'DEPENDS' && 'It depends on your situation'}
+                    <div className="verified-badge">
+                        <span>✓ Verified</span>
+                        <span className="verified-date">{verifiedDate}</span>
                     </div>
-                </section>
+                </div>
 
+                {/* Conditions */}
                 {question.answer.conditions && (
-                    <section className="answer-section">
-                        <h2>Conditions</h2>
+                    <CollapsibleSection title="Conditions & Requirements" icon="📋">
                         <p>{question.answer.conditions}</p>
-                    </section>
+                    </CollapsibleSection>
                 )}
 
+                {/* Consequences */}
                 {question.answer.consequences && (
-                    <section className="answer-section">
-                        <h2>If You Do It Anyway</h2>
-                        <p className="consequences-text">{question.answer.consequences}</p>
-                    </section>
+                    <CollapsibleSection
+                        title="If You Break This Rule"
+                        icon="⚠️"
+                        variant="warning"
+                    >
+                        <p>{question.answer.consequences}</p>
+                    </CollapsibleSection>
                 )}
 
-                <section className="answer-section">
-                    <h2>Official Sources</h2>
+                {/* Sources */}
+                <CollapsibleSection title="Official Sources" icon="🔗">
                     <div className="sources-list">
                         {question.sources.map((source, i) => (
                             <SourceCard key={i} source={source} />
                         ))}
                     </div>
-                </section>
+                </CollapsibleSection>
 
                 <Disclaimer />
             </div>

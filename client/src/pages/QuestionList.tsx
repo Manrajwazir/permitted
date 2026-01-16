@@ -10,6 +10,20 @@ import {
 } from '../services/api';
 import './QuestionList.css';
 
+// Category icons mapping
+const categoryIcons: Record<string, string> = {
+    'Work Rules': '💼',
+    'Travel': '✈️',
+    'Study Status': '📚',
+    'Tax': '💰',
+    'Healthcare': '🏥',
+    'Graduation': '🎓',
+    'Financial': '💵',
+    'Immigration': '🛂',
+    'Housing': '🏠',
+    'Provincial Services': '🏛️',
+};
+
 export default function QuestionList() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [contexts, setContexts] = useState<ContextsResponse | null>(null);
@@ -21,6 +35,10 @@ export default function QuestionList() {
     const selectedStage = searchParams.get('stage') || '';
     const selectedProvince = searchParams.get('province') || '';
     const selectedProgram = searchParams.get('program') || '';
+    const selectedCategory = searchParams.get('category') || '';
+
+    // Get unique categories from questions
+    const categories = [...new Set(questions.map(q => q.category))].sort();
 
     // Update URL when filters change
     const updateFilter = (key: string, value: string) => {
@@ -53,6 +71,11 @@ export default function QuestionList() {
             .finally(() => setLoading(false));
     }, [selectedStage, selectedProvince, selectedProgram]);
 
+    // Filter by category client-side
+    const filteredQuestions = selectedCategory
+        ? questions.filter(q => q.category === selectedCategory)
+        : questions;
+
     if (error) {
         return (
             <div className="question-list-page">
@@ -63,12 +86,35 @@ export default function QuestionList() {
 
     return (
         <div className="question-list-page">
-            <div className="question-list-container">
+            <div className="question-list-header">
                 <h1 className="page-title">Browse Questions</h1>
                 <p className="page-subtitle">
-                    Select your situation to see relevant questions
+                    Find answers to your immigration questions
                 </p>
+            </div>
 
+            <div className="question-list-container">
+                {/* Category Pills */}
+                <div className="category-pills">
+                    <button
+                        className={`category-pill ${!selectedCategory ? 'active' : ''}`}
+                        onClick={() => updateFilter('category', '')}
+                    >
+                        All Topics
+                    </button>
+                    {categories.map((cat) => (
+                        <button
+                            key={cat}
+                            className={`category-pill ${selectedCategory === cat ? 'active' : ''}`}
+                            onClick={() => updateFilter('category', cat)}
+                        >
+                            <span className="pill-icon">{categoryIcons[cat] || '📋'}</span>
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Context Filters */}
                 {contexts && (
                     <FilterBar
                         stages={contexts.stages}
@@ -83,20 +129,43 @@ export default function QuestionList() {
                     />
                 )}
 
+                {/* Results Count */}
+                {!loading && (
+                    <div className="results-count">
+                        <span className="count-number">{filteredQuestions.length}</span>
+                        <span className="count-label">
+                            question{filteredQuestions.length !== 1 ? 's' : ''} found
+                        </span>
+                    </div>
+                )}
+
+                {/* Questions */}
                 {loading ? (
                     <div className="loading-state">
                         <div className="spinner"></div>
                         <p>Loading questions...</p>
                     </div>
-                ) : questions.length === 0 ? (
+                ) : filteredQuestions.length === 0 ? (
                     <div className="empty-state">
-                        <p>No questions found for the selected filters.</p>
-                        <p className="empty-hint">Try adjusting your filters above.</p>
+                        <div className="empty-icon">🔍</div>
+                        <h3>No questions found</h3>
+                        <p>Try adjusting your filters or browse all topics.</p>
+                        <button
+                            className="reset-button"
+                            onClick={() => setSearchParams(new URLSearchParams())}
+                        >
+                            Clear all filters
+                        </button>
                     </div>
                 ) : (
                     <div className="question-grid">
-                        {questions.map((q) => (
-                            <QuestionCard key={q.slug} question={q} />
+                        {filteredQuestions.map((q, index) => (
+                            <QuestionCard
+                                key={q.slug}
+                                question={q}
+                                icon={categoryIcons[q.category] || '📋'}
+                                delay={index * 50}
+                            />
                         ))}
                     </div>
                 )}

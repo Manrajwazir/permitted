@@ -2,24 +2,42 @@
     display: inline-flex;
     align-items: center;
     padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
+    border-radius: 50px;
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
+/* Sizes */
+.status-badge--default {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.status-badge--large {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Status Colors */
 .status-badge--yes {
-    background: var(--color-success-bg);
-    color: var(--color-success-text);
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
 }
 
 .status-badge--no {
-    background: var(--color-error-bg);
-    color: var(--color-error-text);
+    background: rgba(239, 68, 68, 0.15);
+    color: #DC2626;
 }
 
 .status-badge--depends {
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
+    background: rgba(245, 158, 11, 0.15);
+    color: #D97706;
+}
+
+/* Large variant - white on gradient background */
+.status-card .status-badge--large {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 }
